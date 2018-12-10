@@ -12,6 +12,8 @@ import numpy as np
 import time
 import progressbar
 
+from utilities import *
+
 ## Set Paths ##
 path_tables = '/home/af1tang/Desktop/local_mimic/tables/'
 path_views = '/home/af1tang/Desktop/local_mimic/views/'
@@ -551,130 +553,5 @@ def build_pivot():
     ##merge on charttime
     
     return df
-    
-##############################
-#### PRE-PROCESSING ##########
-##############################
 
 
-#################
-### UTILITIES ###
-#################
-def one_hot(arr, size):
-    onehot = np.zeros((len(arr),size), dtype = int)
-    for i in range(len(arr)):
-        if not np.isnan(arr[i]):            
-            onehot[i, int(arr[i])]=1
-    #onehot[np.arange(len(arr)), arr] =1
-    return onehot
-
-def bow_sampler(x, size):
-    if not pd.isnull(x).all():
-        bow = np.sum(one_hot(x, size), axis=0) 
-        bow = np.array([(lambda x: 1 if x >0 else 0)(xx) for xx in bow])
-        first = one_hot(x,size)[0]
-        last = one_hot(x,size)[-1]
-        return [first, bow, last]
-    else:
-        return np.nan
-
-def find_nearest(array, value):
-    array = np.asarray(array)
-    idx = (np.abs(array - value)).argmin()
-    return array[idx]
-
-def find_prev(array, value):
-    array = np.asarray(array)
-    idx = (np.abs(array - value)).argmin()
-    if idx == 0:
-        return array[idx]
-    else:
-        return array[idx-1]
-
-def find_next(array, value):
-    array = np.asarray(array)
-    idx = (np.abs(array - value)).argmin()
-    if idx == len(array) -1:
-        return array[idx]
-    else:
-        return array[idx+1]
-
-def large_save(dct, file_path):
-    '''dct: {k: v}
-    '''
-    lst = sorted(dct.keys())
-    chunksize =10000
-    #chunk bytes
-    bytes_out= bytearray(0)
-    for idx in range(0, len(lst), chunksize):
-        bytes_out += pickle.dumps(dict([(k,v) for k,v in dct.items() if k in lst[idx: idx+ chunksize]]))
-    with open(file_path, 'wb') as f_out:
-            for idx in range(0, len(bytes_out), chunksize):
-                f_out.write(bytes_out[idx:idx+chunksize])
-    #split files
-    for idx in range(0, len(lst), chunksize):
-        chunk = dict([(k,v) for k,v in dct.items() if k in lst[idx: idx+ chunksize]])
-        with open(file_path+'features_'+str(idx+chunksize), 'wb') as f_out:
-            pickle.dump(chunk, f_out, protocol=2)
-
-def large_read(file_path):
-    import os.path
-    bytes_in = bytearray(0)
-    max_bytes = int(1e5)
-    input_size = os.path.getsize(file_path)
-    with open(file_path, 'rb') as f_in:
-        for _ in range(0, input_size, max_bytes):
-            bytes_in += f_in.read(max_bytes)
-    data = pickle.loads(bytes_in)
-    return data
-
-##################
-#### SCRATCH ####
-#################
-'''
-# timestep align #
-    #align them vitals and bg 
-    #iva forward and backward fill
-    cols = list(set(cols_b).union(set(cols_v)))
-    for i in progressbar.progressbar(range(len(lst))):
-        h = lst[i]
-        #incomp = dict([(timestamp, [kk for kk in cols if kk not in sorted(properties.keys())]) for timestamp, properties in sorted(features[h].items(), key= lambda x:x[0]) if len(properties) < 28])
-        for c in cols:
-            #first = next(timestamp for timestamp, properties in sorted(features[h].items(), key=lambda x:x[0]) if c in properties.keys())
-            #last = next(timestamp for timestamp, properties in sorted(features[h].items(), key=lambda x:x[0], reverse=True) if c in properties.keys())
-            if c in cols:
-                s = p_vital[p_vital ]
-            for t in sorted(features[h].keys()):
-# qcut #
-    bins = pd.qcut(p_bg['tidalvolume'], q=5, retbins = True)[1]
-    s = p_bg[p_bg['hadm_id']==h].set_index('charttime')['tidalvolume']
-    #s[(dct[9895]['admittime'] < s.index ) & (s.index<dct[9895]['mv_extub'])]
-    s = s[(s.index<dct[9895]['mv_extub'])]
-    s = s.groupby(s.index.hour).ffill().fillna(method='bfill')
-    s = pd.cut(s, bins, labels = False)
-    
-# resampling hourly binning #
-    for h in p_bg.hadm_id.drop_duplicates():
-        for c in p_bg.columns[2:]:
-            try:
-                df_bg[c][h] = p_bg[p_bg['hadm_id']==h].reset_index().set_index('charttime')[c].resample('H').mean()
-            except:
-                df_bg[c][h] = p_bg[p_bg['hadm_id']==h].reset_index().set_index('charttime')[c].resample('H').last()
-    df = pd.merge(left = ref, right = df_bg, left_index = True, right_index = True)
-
-for s in singles: 
-    add_on = False
-    hadm = list(set(df[df.subject_id == s].hadm_id))
-    for h in hadm:
-        starts = list(set(df[(df.subject_id == s) & (df.hadm_id == h)].starttime))
-        ends = list(set(df[(df.subject_id == s) & (df.hadm_id == h)].endtime)) 
-        if len(starts) >1:
-            starts = sorted( [pd.to_datetime(i) for i in starts] )
-            ends = sorted( [pd.to_datetime(i) for i in ends] )
-            if (pd.to_datetime(starts[1]) - pd.to_datetime(ends[0]))/np.timedelta64(1, 'h') < 48.0:
-                add_on = True
-            if len(starts) > 3: 
-                print(starts)
-    if add_on == True:
-        multi.append(s)
-'''
