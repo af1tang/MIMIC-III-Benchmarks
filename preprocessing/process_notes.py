@@ -15,6 +15,8 @@ import progressbar
 import tensorflow as tf
 import keras.backend.tensorflow_backend as tfb
 
+from utilities import *
+
 ### Change the Path to UMLS codes files ###
 path_parsed = '/home/af1tang/Desktop/mimic3-parsed/'    #parsed MIMIC III disch. notes.
 path_icd = 'all_w2v_CNL.txt'                            #parsed CNL codes.

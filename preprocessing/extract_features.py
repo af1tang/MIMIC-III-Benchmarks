@@ -12,6 +12,8 @@ import time
 import progressbar
 from datetime import datetime, timedelta
 
+from utilities import *
+
 ## Set Paths ##
 path_tables = '/home/af1tang/Desktop/local_mimic/tables/'
 path_views = '/home/af1tang/Desktop/local_mimic/views/'

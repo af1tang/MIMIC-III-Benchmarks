@@ -198,9 +198,6 @@ def make_ufm (conn, engine):
     #conn = mysql.connect(host = host, user = user, passwd = pw, db = mimic, port = port)
     c = conn.cursor()
    
-    #JDBC connect
-    #conn = jdbc.connect('com.mysql.jdbc.Driver', ['jdbc:mysql//illidan-gpu-1.egr.msu.edu:3306', 'af1tang', 'illidan'])
-    #c = conn.cursor()
     
     c.execute('DROP TABLE IF EXISTS UFM')
 
@@ -281,7 +278,6 @@ def make_ufm (conn, engine):
 ############################################
     
 def make_demo(conn, engine):
-#def make_demo(pts):
     #connect to mysql
     #conn = mysql.connect(host = host, user = user, passwd = pw, db = mimic, port = port)
     c = conn.cursor()
@@ -356,20 +352,3 @@ def filter_labs(conn):
     #return (chosen1s, intersect)
     return (keys)
     
-#if __name__ == '__main__':
-#    from optparse import OptionParser, OptionGroup
-#    desc = "Welcome to UFM Table Maker by af1tang."
-#    version = "version 1.0"
-#    opt = OptionParser (description = desc, version=version)
-#    opt.add_option ('-i', action = 'store', type ='string', dest='input', help='Please input path to Database File.')
-#    opt.add_option ('-o', action = 'store', type = 'string', dest='output', default='CHF_data.pickle', help='Please state desired storage file for this session.')
-#    (cli, args) = opt.parse_args()
-#    opt.print_help()
-    
-#    mimic = 'MIMIC3'
-#    host = 'illidan-gpu-1.egr.msu.edu'
-#    user = 'af1tang'
-#    pw = 'illidan'    
-#    port = 3306
-    
-#    main()  

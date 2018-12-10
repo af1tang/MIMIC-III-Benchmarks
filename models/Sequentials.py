@@ -701,7 +701,7 @@ if __name__ == '__main__':
     parser.add_argument('--multi', action = 'store_true', help = "Multilabel classification?")
     parser.add_argument('--mode', choices = ['lstm', 'hierarchal_lstm', 'cnn', 'hierarchal_cnn', 'multiclass_lstm', 'multiclass_cnn'])
     parser.add_argument('--epochs', type = int, default = 30, help = "Enter number of epochs to train model on.")
-    #parser.add_argument('--o', help = "Enter Output File name.")
+    parser.add_argument('--o', help = "Enter Output File name.")
     args = parser.parse_args("--x /home/andy/Desktop/MIMIC/vars/npy/Xs/s12_Xs.pkl  --x_name 12ts --x_name dix --y /home/andy/Desktop/MIMIC/vars/npy/Ys/Ylos_multinomial.npy --w2v False --w2v True --maxlen None --maxlen 39 --mode multiclass_cnn --multi --epochs 100".split())
     #args = parser.parse_args()
 
@@ -722,10 +722,7 @@ if __name__ == '__main__':
         except: maxlens.append(None)
         
     y = np.load(args.y)       
-    data = main(xs = xs, x_names = args.x_name, dxs = dxs, y= y, w2vs = args.w2v, maxlens = maxlens, multi = args.multi, mode = args.mode, epochs = args.epochs)    
-
-    #o = '/home/andy/Desktop/MIMIC/dat/CNN_results/cnn_los/df.pkl'    
-    #o = '/home/andy/Desktop/MIMIC/dat/LSTM_results/lstm_los/df.pkl'
+    data = main(xs = xs, x_names = args.x_name, dxs = dxs, y= y, w2vs = args.w2v, maxlens = maxlens, multi = args.multi, mode = args.mode, epochs = args.epochs)
     
     try:
         with open(args.o, 'wb') as f:
