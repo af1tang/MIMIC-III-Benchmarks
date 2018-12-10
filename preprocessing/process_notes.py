@@ -5,7 +5,6 @@ Created on Mon May 28 12:25:50 2018
 
 @author: af1tang
 """
-
 import string
 import nltk
 import pickle
@@ -24,13 +23,13 @@ path_words = 'all_w2v_UMLS.txt'                         #parsed UMLS codes.
 
 def process_notes(keys, table):
     '''keys: list of UMLS codes
-    table: {s: {h: t_24}} 
-    output: {h: [c1, c2, ... ]}'''
+    table: {subject_id: {hadm_id: 24 timesteps}} 
+    output: {hadm_id: [code1, code2, ... ]}'''
     import glob
     import re
     from datetime import datetime, timedelta 
     
-    filename = '/Users/af1tang/Desktop/Work/MIMIC/mimic3-parsed/'
+    filename = path_parsed
     files = glob.glob(filename + '/*.text')
     subj = sorted([int(f.split('-')[-2]) for f in files])
     dct = {}
@@ -83,7 +82,7 @@ def disch_notes(keys):
     import glob
     import re
     import datetime
-    filename = '/Users/af1tang/Desktop/Work/MIMIC/mimic3-parsed/'
+    filename = path_parsed
     files = glob.glob(filename + '/*.text')
     subj = sorted([int(f.split('-')[-2]) for f in files])
     dct = {}
@@ -135,19 +134,3 @@ def get_umls_dict():
     items = [(i[0], np.array([float(k) for k in i[1:] if len(k) > 0]) ) for i in items]
     dct = dict(items)
     return dct
-
-def idx_2_OHV (idx, size):
-    tmp = [0]*size
-    try:
-        tmp[idx] = 1
-    except: print(idx)
-    return np.array(tmp)
-
-def flatten(lst):
-    make_flat = lambda l: [item for sublist in l for item in sublist]
-    return make_flat(lst)    
-
-def find_nearest(array, value):
-    array = np.asarray(array)
-    idx = (np.abs(array - value)).argmin()
-    return array[idx]

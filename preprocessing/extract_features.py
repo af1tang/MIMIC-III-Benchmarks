@@ -17,14 +17,15 @@ path_tables = '/home/af1tang/Desktop/local_mimic/tables/'
 path_views = '/home/af1tang/Desktop/local_mimic/views/'
 path_notes = '/home/af1tang/Desktop/local_mimic/notes/'
 path_vars = '/home/af1tang/Desktop/vars/'
+path_views = '/Users/af1tang/Dropbox/MIT/vars/pivot_time'
 ###############
 
 #####################
 ### PREPROCESSING ###
 #####################
 def discharge_notes(dsch, times):
-    '''pre: dsch = {s: ([c], t)}, times = {s: {h:t}}
-    post: dct = {h: c}
+    '''pre: dsch = {subject_id: ([code], ttime)}, times = {subject_id: {hadm_id:time}}
+    post: dct = {hadm_id: code}
     '''
     dct = {}
     for s in times.keys():
@@ -39,8 +40,8 @@ def discharge_notes(dsch, times):
     return dct
 
 def filtered_icd9(dct_freq, dct):
-    '''pre: dct_freq = frequency of icd9s, dct = {s: {h: icd9 list}}
-    post: features = {h: filtered icd9s}, freq = [(icd9, descr, count),...]
+    '''pre: dct_freq = frequency of icd9s, dct = {subject_id: {hadm_id: icd9 list}}
+    post: features = {hadm_id: filtered icd9s}, freq = [(icd9, descr, count),...]
     criteria: only consider icd9 appearing in 1%+ of admissions. 
     '''
     dct2 = {}
@@ -60,8 +61,9 @@ def filtered_icd9(dct_freq, dct):
     return features, freq
 
 def composite(dsch, memories, labels, Xy):
-    '''pre: Xy = {h: (x_t, y)}, labels = {h: y}, dsch = {h: c}, memories = {h: x}
-    post: features = {h: (x_t, x, c, y)}
+    '''pre: Xy = {hadm_id: (x_t, y)}, labels = {hadm_id: y}, 
+    dsch = {hadm_id: c}, memories = {h: x}
+    post: features = {hadm_id: (x_t, x, c, y)}
     '''
     features = {}
     lst = sorted(set(Xy.keys()).intersection(set(dsch.keys())).intersection(labels.keys()))
@@ -71,7 +73,7 @@ def composite(dsch, memories, labels, Xy):
     return features
 
 def build_memory(dct, encoder, timesteps = 24, n_features=195):
-    '''dct: {h: (X, y)}
+    '''dct: {hadm_id: (X, y)}
     encoder: attn encoder, compresses temporal series into vector
     '''
     memories = {}
@@ -136,170 +138,15 @@ def pivot_icd(table, w2v_icd, file_names = '/home/af1tang/Desktop/local_mimic/ta
             dct_freq.append((idx, common[idx][0], count))
     return dct, dct_freq
 
-def pivot_time(dct):
-    #p_bg = pd.read_csv(path_views + '/pivots/pivoted_bg_art.csv')
-    #p_gcs = pd.read_csv(path_views + '/pivots/pivoted_gcs.csv')
-    #p_gcs = p_gcs[['icustay_id', 'charttime', 'gcs']]
-    #p_uo = pd.read_csv(path_views+'/pivots/pivoted_uo.csv')
-    #p_vital= pd.read_csv(path_views + '/pivots/pivoted_vital.csv')
-    #p_lab = pd.read_csv(path_views + '/pivots/pivoted_lab.csv')
-    #cohort = pd.read_csv(path_views + 'cohorts/icustay_detail.csv')
-    #cohort = cohort[(cohort.age>=18)&(cohort.los_hospital>=1)&(cohort.los_icu>=1)]
-    p_bg = pd.read_pickle('/Users/af1tang/Dropbox/MIT/vars/pivot_time/pivot_bg')
-    path_views = '/Users/af1tang/Dropbox/MIT/vars/pivot_time'
-    p_gcs = pd.read_pickle(path_views + '/pivot_gcs')
-    p_gcs = p_gcs[['icustay_id', 'charttime', 'gcs']]
-    p_uo = pd.read_pickle(path_views+'/pivot_uo')
-    p_vital= pd.read_pickle(path_views + '/pivot_vital')
-    p_lab = pd.read_pickle(path_views + '/pivot_lab')
-    cohort = pd.read_csv(path_views + '/icustay_detail.csv')
-    cohort = cohort[(cohort.age>=18)&(cohort.los_hospital>=2)&(cohort.los_icu>1) &
-                    (cohort.subject_id.isin(dct.keys()))]
-    ## hourly binning ##
-    p_bg.charttime = pd.to_datetime(p_bg.charttime)
-    p_bg = p_bg.dropna(subset=['hadm_id'])
-    p_vital.charttime = pd.to_datetime(p_vital.charttime)
-    p_vital = p_vital.dropna(subset=['icustay_id'])
-    p_lab.charttime = pd.to_datetime(p_lab.charttime)
-    p_lab = p_lab.dropna(subset=['hadm_id'])
-    p_uo.charttime = pd.to_datetime(p_uo.charttime)
-    p_uo = p_uo.dropna(subset=['icustay_id'])
-    p_gcs.charttime = pd.to_datetime(p_gcs.charttime)
-    p_gcs = p_gcs.dropna(subset=['icustay_id'])
-    
-    ## initialize icustays dict ##
-    dct_bins = {}
-    lst= sorted(list(set(cohort.hadm_id)))
-    hadm_dct = dict([(h, cohort[cohort['hadm_id']==h].subject_id.values[0]) for h in lst])
-    
-    icu_hadm = dict([(h, cohort[cohort.hadm_id == h].icustay_id.tolist()) for h in lst])
-    icu_dct = {}
-    for key,val in icu_hadm.items():
-        for v in val:
-            icu_dct[v] = key
-    icustays = sorted(icu_dct.keys())
-    
-    dfs= [p_bg, p_lab, p_vital, p_uo, p_gcs]
-    cols = [['so2', 'spo2', 'po2', 'pco2', 'fio2_chartevents', 
-       'aado2_calc', 'pao2fio2ratio', 'ph', 'baseexcess', 'bicarbonate',
-       'totalco2', 'hematocrit', 'hemoglobin', 'methemoglobin',  'calcium', 'temperature', 'potassium',
-       'sodium', 'lactate', 'glucose',  'tidalvolume', 'peep'],        
-        ['aniongap', 'albumin', 'bilirubin', 'creatinine', 'platelet',
-       'ptt', 'inr', 'pt', 'bun', 'wbc'],
-         ['heartrate', 'sysbp', 'diasbp', 'meanbp',
-       'resprate', 'tempc', 'spo2', 'glucose'],
-        ['urineoutput'],
-        ['gcs']]
-    
-    ## initialize features by filtered hadm ##
-    features = {}
-    subj = sorted(set(cohort.subject_id))
-    exceptions = []
-    for i in progressbar.progressbar(range(len(subj))):
-        s = subj[i]
-        hadm = np.array([h for h in set(cohort[cohort.subject_id == s].hadm_id) if pd.to_datetime(datetime.strptime(cohort[cohort.hadm_id==h].admittime.values[0], 
-                                          '%Y-%m-%d %H:%M:%S')) < dct[s][np.argmax([idx[1] for idx in dct[s]])][1] + timedelta(hours=24)])
-        if len(hadm>0):
-            hadm = hadm[np.argmax([np.sum([len(p_vital[p_vital.icustay_id == icu_hadm[h][ii]]) 
-                                            for ii in range(len(icu_hadm[h]))]) + 
-                                     len(p_lab[p_lab.hadm_id==h]) for h in hadm])]
-            timesteps = [pd.to_datetime(datetime.strptime(cohort[cohort.hadm_id==hadm].admittime.values[0], 
-                                              '%Y-%m-%d %H:%M:%S') + timedelta(hours=hr)) for hr in range(24)]
-            timesteps = [tt.replace(microsecond=0,second=0,minute=0) for tt in timesteps]
-            features[hadm] = {}
-            for t in timesteps:
-                features[hadm][t] = {}
-        else:
-            exceptions.append(s)
-
-    ## eliminate low time-step samples ##
-    lst = []
-    #initialize timestamps with vital signs
-    for j in progressbar.progressbar(range(len(icustays))):
-        h = icustays[j]
-        if icu_dct[h] in features.keys():
-            timesteps = [i for i in p_vital[p_vital['icustay_id']==h].set_index('charttime').resample('H').first().index.tolist() if i <= max(features[icu_dct[h]].keys())]
-            if len(timesteps) >= 6:
-                lst.append(icu_dct[h])
-
-    #get timestamps for labs
-    lst2 = []
-    for j in progressbar.progressbar(range(len(lst))):
-        h = lst[j]
-        timesteps = [i for i in p_lab[p_lab['hadm_id']==h].set_index('charttime').resample('H').first().index.tolist() if i <= max(features[h].keys())]
-        if len(timesteps)>=1:
-            lst2.append(h)
-    lst = lst2; del lst2
-    #update icustays list and features
-    features = dict([(k,v) for k,v in features.items() if k in lst])
-    icu_hadm = dict([(h, cohort[cohort.hadm_id == h].icustay_id.tolist()) for h in lst])
-    icu_dct = {}
-    for key,val in icu_hadm.items():
-        for v in val:
-            icu_dct[v] = key
-    icustays = sorted(icu_dct.keys())
-
-    lsts = [lst, lst, icustays, icustays, icustays]
-    for idx in range(len(dfs)):
-        for c in cols[idx]:
-            print(c)
-            #get quintile bins
-            bins = pd.qcut(dfs[idx][c], q=5, retbins = True, duplicates = 'drop')[1]
-            dct_bins[c] = bins
-            #for each admission, for each hourly bin, compile bow vector for features
-            for i in progressbar.progressbar(range(len(lsts[idx]))):
-                h = lsts[idx][i]
-                if len(lst) == len(lsts[idx]):
-                    s = dfs[idx][dfs[idx]['hadm_id']==h].set_index('charttime')[c]
-                else:
-                    s =  dfs[idx][dfs[idx]['icustay_id']==h].set_index('charttime')[c]
-                    h = icu_dct[h]
-                s = pd.cut(s, bins, labels = False)
-                #s = s.resample('H').apply(lambda x: np.sum(one_hot(x,6), axis=0) if not pd.isnull(x).all() else np.array([0, 0, 0, 0, 0, 1])).to_dict()
-                s = s.resample('H').apply(lambda x: bow_sampler(x, len(bins)-1))
-                s = s.fillna(method='ffill')
-                s= s.fillna(method='bfill').to_dict()
-                
-                s = dict([(key,val) for key,val in s.items() if key <= max(features[h].keys())])
-                if pd.isnull(list(s.values())).all():
-                    for t in sorted(features[h].keys()):
-                        features[h][t][c] = np.zeros((len(bins)-1), dtype=int)
-                else:
-                    times = sorted([tt for (tt, val) in s.items() if not np.isnan(val).all()])
-                    for t in sorted(features[h].keys()):
-                        if t < times[0]:
-                            features[h][t][c] = s[times[0]][0]
-                        elif t in times:
-                            features[h][t][c] = s[t][1]
-                        elif t not in s.keys():
-                            curr = find_nearest(sorted(s.keys()), t)
-                            features[h][t][c] = s[curr][2]
-                            s[t] = s[curr]
-                        else:
-                            prev = find_prev(sorted(s.keys()), t)
-                            features[h][t][c] = s[prev][2]
-                            s[t] = s[prev]
-
-    return features, dct_bins
-
 def pivot_std_time(dct):
-    #from sklearn.preprocessing import *
-    #p_bg = pd.read_csv(path_views + '/pivots/pivoted_bg_art.csv')
-    #p_gcs = pd.read_csv(path_views + '/pivots/pivoted_gcs.csv')
-    #p_gcs = p_gcs[['icustay_id', 'charttime', 'gcs']]
-    #p_uo = pd.read_csv(path_views+'/pivots/pivoted_uo.csv')
-    #p_vital= pd.read_csv(path_views + '/pivots/pivoted_vital.csv')
-    #p_lab = pd.read_csv(path_views + '/pivots/pivoted_lab.csv')
-    #cohort = pd.read_csv(path_views + 'cohorts/icustay_detail.csv')
-    #cohort = cohort[(cohort.age>=18)&(cohort.los_hospital>=1)&(cohort.los_icu>=1)]
-    p_bg = pd.read_pickle('/Users/af1tang/Dropbox/MIT/vars/pivot_time/pivot_bg')
-    path_views = '/Users/af1tang/Dropbox/MIT/vars/pivot_time'
+    p_bg = pd.read_pickle(path_views + '/pivot_bg')
     p_gcs = pd.read_pickle(path_views + '/pivot_gcs')
     #p_gcs = p_gcs[['icustay_id', 'charttime', 'gcs']]
     p_uo = pd.read_pickle(path_views+'/pivot_uo')
     p_vital= pd.read_pickle(path_views + '/pivot_vital')
     p_lab = pd.read_pickle(path_views + '/pivot_lab')
     cohort = pd.read_csv(path_views + '/icustay_detail.csv')
+    ## Exclusion criteria ##
     cohort = cohort[(cohort.age>=18)&(cohort.los_hospital>=2)&(cohort.los_icu>1) &
                     (cohort.subject_id.isin(dct.keys()))]
     ## hourly binning ##
@@ -454,48 +301,4 @@ def pivot_std_time(dct):
                         features[h][t][c] = 0.0
 
     return features, dct_bins
-#################
-### UTILITIES ###
-#################
-def one_hot(arr, size):
-    onehot = np.zeros((len(arr),size), dtype = int)
-    for i in range(len(arr)):
-        if not np.isnan(arr[i]):            
-            onehot[i, int(arr[i])]=1
-    #onehot[np.arange(len(arr)), arr] =1
-    return onehot
 
-def bow_sampler(x, size):
-    if not pd.isnull(x).all():
-        bow = np.sum(one_hot(x, size), axis=0) 
-        bow = np.array([(lambda x: 1 if x >0 else 0)(xx) for xx in bow])
-        first = one_hot(x,size)[0]
-        last = one_hot(x,size)[-1]
-        return [first, bow, last]
-    else:
-        return np.nan
-
-def find_nearest(array, value):
-    array = np.asarray(array)
-    idx = (np.abs(array - value)).argmin()
-    return array[idx]
-
-def find_prev(array, value):
-    array = np.asarray(array)
-    idx = (np.abs(array - value)).argmin()
-    if idx == 0:
-        return array[idx]
-    else:
-        return array[idx-1]
-
-def find_next(array, value):
-    array = np.asarray(array)
-    idx = (np.abs(array - value)).argmin()
-    if idx == len(array) -1:
-        return array[idx]
-    else:
-        return array[idx+1]
-    
-def flatten(lst):
-    make_flat = lambda l: [item for sublist in l for item in sublist]
-    return make_flat(lst)
