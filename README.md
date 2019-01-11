@@ -32,9 +32,9 @@ Please apply for access to the publicly available MIMIC-III DataBase via `https:
 1. Obtain access to MIMIC-III and clone this repo to local folder. 
 Create a local MIMIC-III folder to store a few files:
 * `.../local_mimic`
-*`.../local_mimic/views`
-*`.../local_mimic/tables`
-*.../local_mimic/save
+* `.../local_mimic/views`
+* `.../local_mimic/tables`
+* `.../local_mimic/save`
 These paths will be important for storing views and pivot tables, which will be used for preprocessing.
 
 2. Build MIMIC-III database using `postgres`, follow the instructions outlined in the MIMIC-III repository: 
@@ -76,21 +76,25 @@ Save these tables under `.../local_mimic/tables` folder.
  
  `preprocessing.py` will generate the following files:
  * `X19.npy`: main feature tensor, consisting of time-series data generated from a combination of 19 lab values and vital signs over 48 hour period from start of admissions. 
- *`X48.npy`:  summary feature matrix of the time-series data, with *min*, *mean*, *max*, and *standard-deviation (std)* of each feature as extended features instead of time-series. 
- *`y`: main label matrix, with (mortality_flag, readmission_status, LOS_bin, diagnoses_labels) for each patient. The labels are coupled here, but during `main.py`, user can define which task to pick (i.e. which column of `y`).   
- *`onehot`: one-hot vector of diagnostic history of each patient. This is different than the *top 25 differential diagnosis* task, which is the last column of `y`. Diagnostic history uses *ICD-9 Group Codes* instead of ICD-9 codes (i.e. more general). Used only for mortality, LOS and readmission predictions. 
- *`w2v`: Skip-Gram embeddings for diagnosis histories (auxiliary input). 
- *`h2v`: Skip-Gram embeddings of both diagnostic histories and demographics info (auxiliary input).
- *`demo`: one-hot vector representation of demographics info (auxiliary input).
- *`sentences`: Skip-Gram embeddings of mixed diagnostic histories and abnormal laboratory flags (main feature input).
+ * `X48.npy`:  summary feature matrix of the time-series data, with *min*, *mean*, *max*, and *standard-deviation (std)* of each feature as extended features instead of time-series. 
+ * `y`: main label matrix, with (mortality_flag, readmission_status, LOS_bin, diagnoses_labels) for each patient. The labels are coupled here, but during `main.py`, user can define which task to pick (i.e. which column of `y`).   
+ * `onehot`: one-hot vector of diagnostic history of each patient. This is different than the *top 25 differential diagnosis* task, which is the last column of `y`. Diagnostic history uses *ICD-9 Group Codes* instead of ICD-9 codes (i.e. more general). Used only for mortality, LOS and readmission predictions. 
+ * `w2v`: Skip-Gram embeddings for diagnosis histories (auxiliary input). 
+ * `h2v`: Skip-Gram embeddings of both diagnostic histories and demographics info (auxiliary input).
+ * `demo`: one-hot vector representation of demographics info (auxiliary input).
+ * `sentences`: Skip-Gram embeddings of mixed diagnostic histories and abnormal laboratory flags (main feature input).
  
  6. Run `main.py` with selection of features, auxiliary features, task, model, and training conditions:
  * `--features_dir`: path to saved the feature file to use as X. Selections include `X19`, `X48`, `sentences`, or `onehot`.
- *`--auxiliary_dir`: path to auxiliary features to be used for certain models. Selections include `w2v`, h2v`, or `demo`.
- *`--y_dir`: path to `y`.
- *`--model`: type of model to use for train / test. User can choose among `['lstm', 'cnn', 'mlp', 'svm', 'rf', 'lr','gbc' ]`. LSTM, CNN-LSTM and MLP are deep models, while SVM, random forest (rf), logistic regression (lr) and gradient boost (GBC) are classical models. Note that LSTM and CNN-LSTM need to use `X19` as input feature because they are *temporal models*.  Non-temporal models such as MLP, SVM, rf, lr and gbc should not use `X19`. 
- *`--task`: specifies the learning task. User can choose between `['readmit', 'mort', 'los', 'dx']`.
- *'--checkpoint_dir'`: specifies the path to save best models and testing results. 
+ * `--auxiliary_dir`: path to auxiliary features to be used for certain models. Selections include `w2v`, h2v`, or `demo`.
+ * `--y_dir`: path to `y`.
+ * `--model`: type of model to use for train / test. User can choose among `['lstm', 'cnn', 'mlp', 'svm', 'rf', 'lr','gbc' ]`. LSTM, CNN-LSTM and MLP are deep models, while SVM, random forest (rf), logistic regression (lr) and gradient boost (GBC) are classical models. Note that LSTM and CNN-LSTM need to use `X19` as input feature because they are *temporal models*.  Non-temporal models such as MLP, SVM, rf, lr and gbc should not use `X19`. 
+ * `--task`: specifies the learning task. User can choose between `['readmit', 'mort', 'los', 'dx']`.
+ * `-checkpoint_dir`: specifies the path to save best models and testing results. 
+* `--hidden_size`: specifies number of hidden units for deep models (default =256). 
+ * `--learning_rate`: specifies the initial learning rate (default=0.005).
+ * `--nepochs`: number of training epochs (default = 100).
+ *`--batch_size`: batch size during training (default = 32).
 
 If you find any errors or issues, please do not hesitate to report. 
  
