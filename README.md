@@ -23,6 +23,7 @@ Updated repository can be found at: https://github.com/illidanlab/urgent-care-co
 * NumPy
 * Pandas
 * Tensorflow 1.11+
+* Progressbar2
 
 ### MIMIC-III ###
 Please apply for access to the publicly available MIMIC-III DataBase via `https://www.physionet.org/`. 
