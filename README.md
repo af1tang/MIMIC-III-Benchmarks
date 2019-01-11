@@ -24,6 +24,7 @@ Updated repository can be found at: https://github.com/illidanlab/urgent-care-co
 * Pandas
 * Tensorflow 1.11+
 * Progressbar2
+* Postgres (or equivalent for building local MIMIC-III)
 
 ### MIMIC-III ###
 Please apply for access to the publicly available MIMIC-III DataBase via `https://www.physionet.org/`. 
@@ -64,7 +65,7 @@ Run `icustay-detail.sql` and obtain a local `.csv` file of `icustays-detail` vie
 Create a local folder to place the `.csv` file in, i.e.`.../local_mimic/views/icustay_details.csv`. 
 Again, have this `.csv` file inside the local `views` folder.
 
-4. Obtain a local copy of the following tables from MIMIC-III:
+5. Obtain a local copy of the following tables from MIMIC-III:
 * admissions.csv
 * diagnoses_icd.csv
 * d_icd_diagnoses.csv
@@ -74,7 +75,7 @@ While tables such as `chartevents` are large, the above tables are quite small a
 
 Save these tables under `.../local_mimic/tables` folder. 
 
-5. Run `preprocessing.py` with inputs: 
+6. Run `preprocessing.py` with inputs: 
 * `--path_tables <path_tables>`
 * `--path_views <path_views>`
 * `--path_save <path_save>`.
@@ -92,7 +93,7 @@ Save these tables under `.../local_mimic/tables` folder.
  * `demo`: one-hot vector representation of demographics info (auxiliary input).
  * `sentences`: Skip-Gram embeddings of mixed diagnostic histories and abnormal laboratory flags (main feature input).
  
- 6. Run `main.py` with selection of features, auxiliary features, task, model, and training conditions:
+ 7. Run `main.py` with selection of features, auxiliary features, task, model, and training conditions:
  * `--features_dir`: path to saved the feature file to use as X. Selections include `X19`, `X48`, `sentences`, or `onehot`.
  * `--auxiliary_dir`: path to auxiliary features to be used for certain models. Selections include `w2v`, `h2v`, or `demo`.
  * `--y_dir`: path to `y`.
@@ -105,4 +106,5 @@ Save these tables under `.../local_mimic/tables` folder.
  *`--batch_size`: batch size during training (default = 32).
 
 If you find any errors or issues, please do not hesitate to report. 
+ 
  
