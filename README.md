@@ -91,7 +91,7 @@ Save these tables under `.../local_mimic/tables` folder.
  
  6. Run `main.py` with selection of features, auxiliary features, task, model, and training conditions:
  * `--features_dir`: path to saved the feature file to use as X. Selections include `X19`, `X48`, `sentences`, or `onehot`.
- * `--auxiliary_dir`: path to auxiliary features to be used for certain models. Selections include `w2v`, h2v`, or `demo`.
+ * `--auxiliary_dir`: path to auxiliary features to be used for certain models. Selections include `w2v`, `h2v`, or `demo`.
  * `--y_dir`: path to `y`.
  * `--model`: type of model to use for train / test. User can choose among `['lstm', 'cnn', 'mlp', 'svm', 'rf', 'lr','gbc' ]`. LSTM, CNN-LSTM and MLP are deep models, while SVM, random forest (rf), logistic regression (lr) and gradient boost (GBC) are classical models. Note that LSTM and CNN-LSTM need to use `X19` as input feature because they are *temporal models*.  Non-temporal models such as MLP, SVM, rf, lr and gbc should not use `X19`. 
  * `--task`: specifies the learning task. User can choose between `['readmit', 'mort', 'los', 'dx']`.
