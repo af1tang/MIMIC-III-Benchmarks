@@ -76,7 +76,7 @@ Save these tables under `.../local_mimic/tables` folder.
 * `--path_views <path_views>`
 * `--path_save <path_save>`.
 
-`<path_tables>` and `<path_views>`  should correspond to the folders under which the local tables and views (pivots and icustayst-details) are saved.
+`<path_tables>` and `<path_views>`  should correspond to the folders under which the local tables and views (pivots and icustays-details) are saved.
  `<path_save>` corresponds to the desired folder to save your variables for training and beyond.
  
  `preprocessing.py` will generate the following files:
