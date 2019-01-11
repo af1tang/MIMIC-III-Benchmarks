@@ -35,6 +35,7 @@ Create a local MIMIC-III folder to store a few files:
 * `.../local_mimic/views`
 * `.../local_mimic/tables`
 * `.../local_mimic/save`
+
 These paths will be important for storing views and pivot tables, which will be used for preprocessing.
 
 2. Build MIMIC-III database using `postgres`, follow the instructions outlined in the MIMIC-III repository: 
@@ -48,12 +49,14 @@ Run use the `.sql` scripts to build a local set of `.csv` files of the pivot tab
 * pivoted_lab.sql
 * pivoted_gcs.sql (optional)
 * pivoted_uo.sql (optional)
+
 After running these scripts, you should have obtained local `.csv` files of the pivot tables. 
 Create a local folder to place them in, i.e. `.../local_mimic/views/pivoted-bg.csv`. 
 Remember this `.../local_mimic/views` folder, as it will be the `path_views` input for preprocessing purposes.
 
 4. Go to the demographics folder in the MIMIC-III repository:
 `https://github.com/MIT-LCP/mimic-code/tree/master/concepts/demographics`.
+
 Run `icustay-detail.sql` and obtain a local `.csv` file of `icustays-detail` view. 
 Create a local folder to place the `.csv` file in, i.e.`.../local_mimic/views/icustay_details.csv`. 
 Again, have this `.csv` file inside the local `views` folder.
@@ -62,6 +65,7 @@ Again, have this `.csv` file inside the local `views` folder.
 * admissions.csv
 * diagnoses_icd.csv
 * d_icd_diagnoses.csv
+
 These can be directly obtained from *Physionet* as compressed files. 
 While tables such as `chartevents` are large, the above tables are quite small and easy to query directly if a local copy is available. 
 
@@ -71,6 +75,7 @@ Save these tables under `.../local_mimic/tables` folder.
 * `--path_tables <path_tables>`
 * `--path_views <path_views>`
 * `--path_save <path_save>`.
+
 `<path_tables>` and `<path_views>`  should correspond to the folders under which the local tables and views (pivots and icustayst-details) are saved.
  `<path_save>` corresponds to the desired folder to save your variables for training and beyond.
  
