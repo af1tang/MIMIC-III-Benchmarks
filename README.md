@@ -1,6 +1,8 @@
 # Predictive Modeling in Urgent Care
 
-This is the code repository for manuscript "Predictive Modeling in Urgent Care: A Comparative Study of Machine Learning Approaches" by Fengyi Tang, Cao Xiao, Fei Wang, Jiayu Zhou.
+This is the code repository for manuscript *"Predictive Modeling in Urgent Care: A Comparative Study of Machine Learning Approaches"* by *Fengyi Tang, Cao Xiao, Fei Wang, Jiayu Zhou*.
+
+Updated repository can be found at: https://github.com/illidanlab/urgent-care-comparative.
 
 ## Manuscript Abstract
 
