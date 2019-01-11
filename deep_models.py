@@ -96,7 +96,7 @@ def hierarchical_cnn (input_shape, aux_shape, targets = 1, hidden = 256, multicl
 
 def hierarchical_lstm (input_shape, aux_shape, targets = 1, hidden = 256, multiclass = False, learn_rate = 1e-4):
     x = Input(shape = input_shape, name = 'x')    
-    xx = Bidirectional(LSTM (hidden, return_sequences = target_rep, stateful = stateful, activation = 'relu'), merge_mode = 'concat') (xx)
+    xx = Bidirectional(LSTM (hidden, activation = 'relu'), merge_mode = 'concat') (x)
     xx = Dropout(0.5)(xx)
     
     dx = Input(shape = aux_shape, name = 'aux')

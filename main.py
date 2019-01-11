@@ -10,7 +10,6 @@ import numpy as np
 import utilities
 import argparse
 import pickle
-import time
 from deep_models import *
 
 from sklearn.model_selection import *
@@ -27,7 +26,7 @@ def pipeline(X, Z, opts):
     from keras.callbacks import ModelCheckpoint
     skf = StratifiedKFold(n_splits=5)
     data = {}
-    start = time.time(); count = 0
+    count = 0
     
     y = get_task(opts)
     targets, multiclass, deep = get_setup(opts)
@@ -38,10 +37,11 @@ def pipeline(X, Z, opts):
     else:
         ref_target = y
     
-    X,y,Z = np.array(X), np.array(y), np.array(Z)    
+    X,y= np.array(X), np.array(y)
+    if Z is not None: Z = np.array(Z)
     for train_index, test_index in skf.split(X, ref_target):
         count +=1
-        print ("KFold #{0}, TIME: {1} Hours".format(count, (time.time() - start)/3600))
+        print ("KFold #{0}".format(count))
         
         X_tr, X_te = X[train_index], X[test_index]
         if Z is not None:
@@ -57,7 +57,7 @@ def pipeline(X, Z, opts):
         if Z is not None: aux_shape = (Z.shape[-1],)
         else: aux_shape = None
         #make model 
-        filename = os.path.join(opts.checkpoint_path, '{}-{}'.format(opts.features_dir[-7:], opts.auxiliary_dir[-7:]))
+        filename = os.path.join(opts.checkpoint_path, 'best_model' )
         checkpoint = ModelCheckpoint(filename, monitor='val_loss', verbose=1, save_best_only=True, mode='max')
         model = make_model(opts, input_shape, aux_shape)
         
@@ -184,6 +184,32 @@ def get_setup(opts):
     else: deep=False
     return targets, multiclass, deep
 
+def take_names(opts):
+    #x_name
+    if 'X48' in opts.features_dir:
+        x_name = 'x48'
+    elif 'X' in opts.features_dir:
+        x_name = 'x19'
+    elif 'sentence' in opts.features_dir:
+        x_name = 'sent'
+    elif 'onehot' in opts.features_dir:
+        x_name = 'ohv'
+    else:
+        x_name = None
+    #aux_name
+    if opts.auxiliary_dir:
+        if 'w2v' in opts.auxiliary_dir:
+            aux_name = 'w2v'
+        elif 'h2v' in opts.auxiliary_dir:
+            aux_name = 'h2v'
+        elif 'demo' in opts.auxiliary_dir:
+            aux_name = 'demo'
+        else:
+            aux_name='None'
+    else:
+        aux_name = 'None'    
+    return x_name, aux_name
+
 def make_model(opts, input_shape, aux_shape):
     targets, multiclass, deep = get_setup(opts)
         
@@ -228,16 +254,16 @@ def create_parser():
     parser = argparse.ArgumentParser()
 
     # Training hyper-parameters
-    parser.add_argument('--features_dir', type=str, default='/Users/af1tang/Desktop/tmp/X.npy',
+    parser.add_argument('--features_dir', type=str, default='/Users/af1tang/Desktop/tmp/onehot.npy',
                         help='Path to the uniform feature matrix (X19 or X48), or diagnostic history (sentences or onehot) file.')
-    parser.add_argument('--auxiliary_dir', type=str, default='/Users/af1tang/Desktop/tmp/w2v.npy',
+    parser.add_argument('--auxiliary_dir', type=str, default='/Users/af1tang/Desktop/tmp/demo.npy',
                         help='Path to the auxiliary features (w2v, h2v or demo) file.')
     parser.add_argument('--y_dir', type=str, default='/Users/af1tang/Desktop/tmp/y',
                         help='Path to the task labels (Y) file.')
-    parser.add_argument('--model', default= 'cnn',
+    parser.add_argument('--model', default= 'gbc',
                         choices=['lstm' , 'cnn', 'mlp', 'svm', 'rf', 'lr', 'gbc'],
                         help='Type of model to use: lstm (default), cnn, mlp, svm, rf, lr, gbc.')
-    parser.add_argument('--task', choices = ['readmit', 'mort', 'los','dx' ], default='dx',
+    parser.add_argument('--task', choices = ['readmit', 'mort', 'los','dx' ], default='readmit',
                         help='Target task: readmission (readmit), mortality (mort), los, diagnosis (dx).')
 
     parser.add_argument('--hidden_size', type=int, default=256,
@@ -276,7 +302,8 @@ if __name__ == '__main__':
 
     print_opts(opts)
 
-    model_name = '{}-{}'.format(opts.model, opts.task)
+    x_name, aux_name = take_names(opts)
+    model_name = '{}-{}-{}-{}'.format(opts.model, opts.task, x_name, aux_name)
     opts.checkpoint_path = os.path.join(opts.checkpoint_dir, model_name)
 
     utilities.create_dir_if_not_exists(opts.checkpoint_path)
@@ -285,6 +312,6 @@ if __name__ == '__main__':
     scores_folder = os.path.join(opts.checkpoint_path, 'scores')
     model, stats = main(opts)
     with open(scores_folder + '/raw_stats', 'wb') as f:
-        pickle.dump(stats)
+        pickle.dump(stats, f)
     
         

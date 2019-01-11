@@ -16,7 +16,7 @@ from utilities import *
 
 ##### Labels #####
 def make_labels():
-    icu_details = pd.read_csv(path_views + '/cohorts/icustay_detail.csv')
+    icu_details = pd.read_csv(path_views + '/icustay_detail.csv')
     #apply exclusion criterias
     icu_details = icu_details[(icu_details.age>=18)&(icu_details.los_hospital>=1)&(icu_details.los_icu>=1)]
     subj = list(set(icu_details.subject_id.tolist()))
@@ -110,13 +110,13 @@ def pivot_icd(subj):
 #### Features ####
 def get_features(patients):
     '''patients: {subject_id: hadm_id}'''
-    p_bg = pd.read_csv(path_views + '/pivots/pivoted_bg_art.csv')
-    p_gcs = pd.read_csv(path_views + '/pivots/pivoted_gcs.csv')
-    p_gcs = p_gcs[['icustay_id', 'charttime', 'gcs']]
-    p_uo = pd.read_csv(path_views+'/pivots/pivoted_uo.csv')
-    p_vital= pd.read_csv(path_views + '/pivots/pivoted_vital.csv')
-    p_lab = pd.read_csv(path_views + '/pivots/pivoted_lab.csv')
-    cohort = pd.read_csv(path_views + '/cohorts/icustay_detail.csv')
+    p_bg = pd.read_csv(path_views + '/pivoted_bg.csv')
+    #p_gcs = pd.read_csv(path_views + '/pivoted_gcs.csv')
+    #p_gcs = p_gcs[['icustay_id', 'charttime', 'gcs']]
+    #p_uo = pd.read_csv(path_views+'/pivoted_uo.csv')
+    p_vital= pd.read_csv(path_views + '/pivoted_vital.csv')
+    p_lab = pd.read_csv(path_views + '/pivoted_lab.csv')
+    cohort = pd.read_csv(path_views + '/icustay_detail.csv')
     ## Exclusion criteria ##
     cohort = cohort[cohort.subject_id.isin(patients.keys())&(cohort.hadm_id.isin(patients.values()))]
 
@@ -127,10 +127,10 @@ def get_features(patients):
     p_vital = p_vital.dropna(subset=['icustay_id'])
     p_lab.charttime = pd.to_datetime(p_lab.charttime)
     p_lab = p_lab.dropna(subset=['hadm_id'])
-    p_uo.charttime = pd.to_datetime(p_uo.charttime)
-    p_uo = p_uo.dropna(subset=['icustay_id'])
-    p_gcs.charttime = pd.to_datetime(p_gcs.charttime)
-    p_gcs = p_gcs.dropna(subset=['icustay_id'])
+    #p_uo.charttime = pd.to_datetime(p_uo.charttime)
+    #p_uo = p_uo.dropna(subset=['icustay_id'])
+    #p_gcs.charttime = pd.to_datetime(p_gcs.charttime)
+    #p_gcs = p_gcs.dropna(subset=['icustay_id'])
     
     ## initialize icustays dict ##
     dct_bins = {}
@@ -262,7 +262,7 @@ def get_demographics(patients):
     from sklearn.preprocessing import LabelEncoder
     subj = list(set(patients.keys()))
     hadm = list(set(patients.values()))
-    cohort = pd.read_csv(path_views + '/cohorts/icustay_detail.csv')
+    cohort = pd.read_csv(path_views + '/icustay_detail.csv')
     ## Exclusion criteria ##
     cohort = cohort[cohort.subject_id.isin(patients.keys())&(cohort.hadm_id.isin(patients.values()))]
     admissions = pd.read_csv(path_tables + '/admissions.csv')
@@ -301,7 +301,10 @@ def auxiliary_features(y, Z, sentences, words):
     h2v, _,_,_ = skip_gram(dx_demo)
     print("and even more skip gram .... (sentences)")
     sent_vecs, _, _,_ = skip_gram(full_sentences)
-    return np.array(onehot), np.array(w2v), np.array(h2v), np.array(sent_vecs)
+    #demographics features
+    demo_size = max(flatten(Z))+1
+    demo = [np.sum(one_hot(zz, demo_size),axis=0 )for zz in Z]
+    return np.array(onehot), np.array(w2v), np.array(h2v), np.array(sent_vecs), np.array(demo)
 
 #### Preprocessing ####
 def preprocess(features, labels, demographics):
@@ -402,7 +405,7 @@ if __name__ == '__main__':
         print("Preprocessing to construct X and y.")
         X, y, Z, X48, sentences, words = preprocess(features, labels, demographics)
         np.save(path_save + '/X19', X)
-        np.save(path_save+'/demo', Z)
+        np.save(path_save+'/Z', Z)
         np.save(path_save + '/X48', X48)
         with open(path_save+'/y', 'wb') as f:
             pickle.dump(y, f)
@@ -411,11 +414,12 @@ if __name__ == '__main__':
         with open(path_save+'/visit_level', 'wb') as f:
             pickle.dump(words, f)   
         print("Making auxiliary features: onehot, w2v, h2v, sentences ... etc.")
-        onehot, w2v, h2v, sent_vecs = auxiliary_features(y, Z, sentences, words)
+        onehot, w2v, h2v, sent_vecs, demo = auxiliary_features(y, Z, sentences, words)
         np.save(path_save+'/onehot', onehot)
         np.save(path_save+'/w2v', w2v)
         np.save(path_save+'/h2v', h2v)
         np.save(path_save+'/sentences', sent_vecs)
+        np.save(path_save+'/demo', demo)
         print("Done!")
     else:
         print("Make sure you have the MIMIC-III Tables and Views.")
