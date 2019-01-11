@@ -33,6 +33,8 @@ def pipeline(X, Z, opts):
     targets, multiclass, deep = get_setup(opts)
     if targets>1:
         ref_target = y[:,-1]
+        for idx in range(len(y[0,:])):
+            y[:, idx][y[:,idx]>1] = 1
     else:
         ref_target = y
     
@@ -233,9 +235,9 @@ def create_parser():
     parser = argparse.ArgumentParser()
 
     # Training hyper-parameters
-    parser.add_argument('--features_dir', type=str, default='/Users/af1tang/Desktop/tmp/sentences.npy',
+    parser.add_argument('--features_dir', type=str, default='/Users/af1tang/Desktop/tmp/X48.npy',
                         help='Path to the uniform feature matrix (X19 or X48), or diagnostic history (sentences or onehot) file.')
-    parser.add_argument('--auxiliary_dir', type=str, default=None,
+    parser.add_argument('--auxiliary_dir', type=str, default='w2v',
                         help='Path to the auxiliary features (w2v, h2v or demo) file.')
     parser.add_argument('--y_dir', type=str, default='/Users/af1tang/Desktop/tmp/y',
                         help='Path to the task labels (Y) file.')
