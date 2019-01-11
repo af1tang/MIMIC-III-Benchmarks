@@ -73,7 +73,7 @@ def mlp_model(input_shape, hidden =512, targets = 1, multiclass = False, learn_r
         model.compile(loss='binary_crossentropy', optimizer=Adam(lr=learn_rate, beta_1 =.5 ), metrics=['accuracy'])
     return (model)
 
-def hierarchal_cnn (input_shape, aux_shape, targets = 1, hidden = 256, multiclass = False, learn_rate=1e-4):
+def hierarchical_cnn (input_shape, aux_shape, targets = 1, hidden = 256, multiclass = False, learn_rate=1e-4):
     x = Input(shape = input_shape, name = 'x')
     xx = Convolution1D(nb_filter = 64, filter_length = 3, border_mode = 'same', activation = 'relu') (x)
     xx = MaxPooling1D(pool_length = 3) (xx)
@@ -94,7 +94,7 @@ def hierarchal_cnn (input_shape, aux_shape, targets = 1, hidden = 256, multiclas
         model.compile (loss = 'binary_crossentropy', optimizer = Adam(lr = learn_rate), metrics = ['accuracy'])
     return (model)
 
-def hierarchal_lstm (input_shape, aux_shape, targets = 1, hidden = 256, multiclass = False, learn_rate = 1e-4):
+def hierarchical_lstm (input_shape, aux_shape, targets = 1, hidden = 256, multiclass = False, learn_rate = 1e-4):
     x = Input(shape = input_shape, name = 'x')    
     xx = Bidirectional(LSTM (hidden, return_sequences = target_rep, stateful = stateful, activation = 'relu'), merge_mode = 'concat') (xx)
     xx = Dropout(0.5)(xx)

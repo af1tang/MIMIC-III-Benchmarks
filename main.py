@@ -44,20 +44,20 @@ def pipeline(X, Z, opts):
         print ("KFold #{0}, TIME: {1} Hours".format(count, (time.time() - start)/3600))
         
         X_tr, X_te = X[train_index], X[test_index]
-        if Z:
+        if Z is not None:
             Z_tr, Z_te = Z[train_index], Z[test_index]
-            if deep:
-                X_tr, Z_te = np.append(X_tr, Z_tr), np.append(X_te, Z_te)
+            if (not deep) or (opts.model =='mlp'):
+                X_tr, X_te = np.append(X_tr, Z_tr, axis=1), np.append(X_te, Z_te, axis=1)
         y_tr, y_te = y[train_index], y[test_index]
         
         if len(X_tr.shape) >2:
             input_shape = (X_tr.shape[1], X_tr.shape[-1])
         else:
             input_shape= (X_tr.shape[-1],)
-        if Z: aux_shape = (Z.shape[-1],)
+        if Z is not None: aux_shape = (Z.shape[-1],)
         else: aux_shape = None
         #make model 
-        filename = os.path.join(opts.checkpoint_path, 'best_model')
+        filename = os.path.join(opts.checkpoint_path, '{}-{}'.format(opts.features_dir[-7:], opts.auxiliary_dir[-7:]))
         checkpoint = ModelCheckpoint(filename, monitor='val_loss', verbose=1, save_best_only=True, mode='max')
         model = make_model(opts, input_shape, aux_shape)
         
@@ -65,19 +65,19 @@ def pipeline(X, Z, opts):
         for e in range(opts.nepochs):
             #subsample
             if targets>1:
-                if Z:
+                if Z is not None:
                     xs, zs, ys = shuffle(X_tr, Z_tr, y_tr)
                 else:
                     xs, ys = shuffle(X_tr, y_tr)
             else:
-                if Z and deep:
+                if (Z is not None) and deep:
                     xs, zs, ys = hierarchical_subsample(X_tr, Z_tr, y_tr, 1.0)
                 else:
                     xs, ys = balanced_subsample(X_tr, y_tr, 1.0)
                 ys = np.array([[i] for i in ys])
 
             if deep:
-                if Z:
+                if (Z is not None) and (opts.model !='mlp'):
                     model.fit(x = [xs, zs], y= ys,
                               batch_size = opts.batch_size, callbacks=[checkpoint],
                               validation_split=.2, epochs = 1, verbose=2)
@@ -90,7 +90,7 @@ def pipeline(X, Z, opts):
         if deep: model.load_weights(filename)
         else: 
             with open(filename, 'wb') as f: pickle.dump(model, f)
-        if Z and deep:
+        if (Z is not None) and deep and (opts.model !='mlp'):
             tr_auc, _, _, _ = test_model(x = [X_tr, Z_tr], y= y_tr, model = model, n_classes=targets)
             te_auc, f1_score, sen, spec = test_model(x = [X_te, Z_te], y= y_te, 
                                                      model = model, n_classes=targets)
@@ -142,20 +142,13 @@ def multi_score(y_te, ypred):
     sens, specs, aucs, f1s= {}, {},{}, {}
     for idx in range(ypred.shape[1]):
         y_true, yhat = y_te[:, idx], ypred[:, idx]
-        #thresholds = np.histogram(yhat, bins=20)[1]
         fpr, tpr, thresholds = roc_curve(y_true, yhat)
         aucs[idx] = auc_score(fpr, tpr)
-        f1 =[]
-        for thresh in thresholds:
-            yhat[yhat>=thresh] = 1
-            yhat[yhat<thresh] = 0
-            f1.append(f1_score(y_true, yhat))
-            yhat=ypred[:, idx]                  #reset yhat!
-        optimal_idx = np.argmax(f1)
+        optimal_idx = np.argmax(tpr - fpr)
         thresh = thresholds[optimal_idx]
         yhat[yhat>=thresh] = 1
         yhat[yhat<thresh] = 0
-        f1s[idx] = f1[optimal_idx]
+        f1s[idx] = f1_score(y_true, yhat)
         tn, fp, fn, tp = confusion_matrix(y_true, yhat).ravel()
         sens[idx]=1.0* (tp/(tp+fn))
         specs[idx]=1.0* (tn/(tn+fp))
@@ -235,13 +228,13 @@ def create_parser():
     parser = argparse.ArgumentParser()
 
     # Training hyper-parameters
-    parser.add_argument('--features_dir', type=str, default='/Users/af1tang/Desktop/tmp/X48.npy',
+    parser.add_argument('--features_dir', type=str, default='/Users/af1tang/Desktop/tmp/X.npy',
                         help='Path to the uniform feature matrix (X19 or X48), or diagnostic history (sentences or onehot) file.')
-    parser.add_argument('--auxiliary_dir', type=str, default='w2v',
+    parser.add_argument('--auxiliary_dir', type=str, default='/Users/af1tang/Desktop/tmp/w2v.npy',
                         help='Path to the auxiliary features (w2v, h2v or demo) file.')
     parser.add_argument('--y_dir', type=str, default='/Users/af1tang/Desktop/tmp/y',
                         help='Path to the task labels (Y) file.')
-    parser.add_argument('--model', default= 'mlp',
+    parser.add_argument('--model', default= 'cnn',
                         choices=['lstm' , 'cnn', 'mlp', 'svm', 'rf', 'lr', 'gbc'],
                         help='Type of model to use: lstm (default), cnn, mlp, svm, rf, lr, gbc.')
     parser.add_argument('--task', choices = ['readmit', 'mort', 'los','dx' ], default='dx',
